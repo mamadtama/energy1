@@ -1498,7 +1498,6 @@ Q3D.application
       }
     };
   })();
-})();
 
 // forecast function
   
