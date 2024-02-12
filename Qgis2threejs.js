@@ -1760,6 +1760,14 @@ Q3D.gui
   };
 
   gui.showQueryResult = function (point, layer, featureId, obj, show_coords) {
+	  	
+		// layer name
+		var e = E("qr_layername");
+		var x = layer.features[featureId].geom.centroids[0][0];
+		var y = layer.features[featureId].geom.centroids[0][1];
+		var x1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).x;
+		var y1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).y;
+
 	  	var retrieved_data = function getdata(){
 		    var tmp=null;
 		    $.ajax({           
@@ -1773,12 +1781,6 @@ Q3D.gui
 		      })
 		    return tmp;
 		  }();
-		// layer name
-		var e = E("qr_layername");
-		var x = layer.features[featureId].geom.centroids[0][0];
-		var y = layer.features[featureId].geom.centroids[0][1];
-		var x1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).x;
-		var y1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).y;
 		var da = retrieved_data[featureId];
 		
 		if (layer && e) e.innerHTML = 'House: '+(da["House_PCT"]*100).toFixed(2).toString()
