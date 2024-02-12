@@ -197,6 +197,7 @@ Q3D.Group.prototype.clear = function () {
 
 
 //load grid_area data
+/*
 var retrieved_data = function getdata(){
     var tmp=null;
     $.ajax({           
@@ -210,6 +211,8 @@ var retrieved_data = function getdata(){
       })
     return tmp;
   }();
+
+*/  
 /*
 Q3D.application
 */
