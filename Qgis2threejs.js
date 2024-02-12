@@ -210,7 +210,6 @@ var retrieved_data = function getdata(){
       })
     return tmp;
   }();
-
 /*
 Q3D.application
 */
@@ -1175,6 +1174,7 @@ Q3D.application
     app.scene.remove(app.queryMarker);
     app.highlightFeature(null);
     app.measure.clear();
+    app.forecast.clear();
     app.render();
 
     app.selectedLayer = null;
@@ -1499,8 +1499,6 @@ Q3D.application
     };
   })();
 
-// forecast function
-  
   (function () {
 
     app.forecast = {
@@ -1530,6 +1528,8 @@ Q3D.application
       }
     }
   })();
+
+})();
 
 /*
 Q3D.gui
@@ -1612,7 +1612,7 @@ Q3D.gui
 
     // popup
     ON_CLICK("closebtn", app.cleanView);
-    ON_CLICK("closebtn_f", app.cleanView_f);  //forecast button
+    ON_CLICK("closebtn_f", app.cleanView_f);
     ON_CLICK("zoomtolayer", function () {
       app.cameraAction.zoomToLayer(app.selectedLayer);
     });
@@ -1624,6 +1624,11 @@ Q3D.gui
     });
     ON_CLICK("measurebtn", function () {
       app.measure.start();
+    });
+
+    ON_CLICK("forecastbtn", function () {
+      app.forecast.showResult();
+      console.log('forecast!');
     });
 
     // narrative box
@@ -1645,7 +1650,6 @@ Q3D.gui
 
   gui.clean = function () {
     gui.popup.hide();
-    gui.popupforecast.hide();
     if (gui.layerPanel.initialized) gui.layerPanel.hide();
   };
 
@@ -1719,7 +1723,6 @@ Q3D.gui
 
   };
 
-  // interface of forecast pop up 
   gui.popupforecast = {
 
     modal: false,
@@ -1747,31 +1750,17 @@ Q3D.gui
 
   };
 
-
   gui.showInfo = function () {
     var e = E("urlbox");
     if (e) e.value = app.currentViewUrl();
     gui.popup.show("pageinfo");
   };
 
-  //info of layer percentage and coordinates
-
-  gui.showQueryResult = function (point, layer, featureId, obj, show_coords) {
+  gui.showQueryResult = function (point, layer, obj, show_coords) {
     // layer name
     var e = E("qr_layername");
-    var x = layer.features[featureId].geom.centroids[0][0];
-    var y = layer.features[featureId].geom.centroids[0][1];
-    var x1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).x;
-    var y1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).y;
-    var da = retrieved_data[featureId];
-    
-    if (layer && e) e.innerHTML = 'House: '+(da["House_PCT"]*100).toFixed(2).toString()
-                +' % <br> Factory :'+(da["Factory__1"]*100).toFixed(2).toString()                      
-                            +' % <br> Gov. Building :'+(da["Govern_PCT"]*100).toFixed(2).toString()
-                            +' % <br> Comm. Building :'+(da["Commerc_PC"]*100).toFixed(2).toString()
-                +' % <br> Park :'+(da["Park_PCT"]*100).toFixed(2).toString()                            
-                +' %';   
-    
+    if (layer && e) e.innerHTML = layer.properties.name;
+
     // clicked coordinates
     e = E("qr_coords_table");
     if (e) {
@@ -1787,16 +1776,12 @@ Q3D.gui
           e.innerHTML = Q3D.Utils.convertToDMS(lonLat[1], lonLat[0]) + ", Elev. " + pt.z.toFixed(2);
         }
         else {
-          proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
-          proj4.defs("EPSG:5171", "+proj=tmerc +lat_0=38 +lon_0=129 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs");
-          //var firstProjection =';
-          var new_xy = proj4("EPSG:5171","EPSG:4326", [pt.x,pt.y]);
-          e.innerHTML = [new_xy[0].toFixed(3), new_xy[1].toFixed(3), pt.z.toFixed(0)].join(", ");
+          e.innerHTML = [pt.x.toFixed(2), pt.y.toFixed(2), pt.z.toFixed(2)].join(", ");
         }
 
         if (conf.debugMode) {
           var p = app.scene.userData,
-            be = p.baseExtent;
+              be = p.baseExtent;
           e.innerHTML += "<br>WLD: " + [point.x.toFixed(8), point.y.toFixed(8), point.z.toFixed(8)].join(", ");
           e.innerHTML += "<br><br>ORG: " + [p.origin.x.toFixed(8), p.origin.y.toFixed(8), p.origin.z.toFixed(8)].join(", ");
           e.innerHTML += "<br>BE CNTR: " + [be.cx.toFixed(8), be.cy.toFixed(8)].join(", ");
@@ -1820,7 +1805,7 @@ Q3D.gui
         for (var i = 0, l = layer.properties.propertyNames.length; i < l; i++) {
           row = document.createElement("tr");
           row.innerHTML = "<td>" + layer.properties.propertyNames[i] + "</td>" +
-                  "<td>" + obj.userData.properties[i] + "</td>";
+                          "<td>" + obj.userData.properties[i] + "</td>";
           e.appendChild(row);
         }
         e.classList.remove("hidden");
@@ -1831,8 +1816,6 @@ Q3D.gui
     }
     gui.popup.show("queryresult");
   };
-
-  //end of info of layer percentage and coordinates
 
   gui.showPrintDialog = function () {
 
