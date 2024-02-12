@@ -1223,65 +1223,66 @@ Q3D.application
     app.highlightObject = clone;
   };
 
-  app.canvasClicked = function (e) {
+app.canvasClicked = function (e) {
 
-    // button 2: right click
-    if (e.button == 2 && app.measure.isActive) {
-      app.measure.removeLastPoint();
-      return;
-    }
-
-    var canvasOffset = app._offset(app.renderer.domElement);
-    var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
-
-    var obj, o, layer, layerId;
-    for (var i = 0, l = objs.length; i < l; i++) {
-      obj = objs[i];
-
-      if (app.measure.isActive) {
-        app.measure.addPoint(obj.point);
-        return;
-      }
-
-      // get layerId of clicked object
-      o = obj.object;
-      while (o) {
-        layerId = o.userData.layerId;
-        if (layerId !== undefined) break;
-        o = o.parent;
-      }
-
-      if (layerId === undefined) break;
-
-      layer = app.scene.mapLayers[layerId];
-      if (!layer.clickable) break;
-
-      app.selectedLayer = layer;
-      app.queryTargetPosition.copy(obj.point);
-
-      // query marker
-      app.queryMarker.position.copy(obj.point);
-      app.scene.add(app.queryMarker);
-
-      if (o.userData.isLabel) {
-        o = o.userData.objs[o.userData.partIdx];    // label -> object
-      }
-
-      app.highlightFeature(o);
-      app.render();
-      gui.showQueryResult(obj.point, layer, o, conf.coord.visible);
-
-      return;
-    }
-    if (app.measure.isActive) return;
-
-    app.cleanView();
-
-    if (app.controls.autoRotate) {
-      app.setRotateAnimationMode(false);
-    }
-  };
-
+	// button 2: right click
+	if (e.button == 2 && app.measure.isActive) {
+		app.measure.removeLastPoint();
+		return;
+	}
+	
+	var canvasOffset = app._offset(app.renderer.domElement);
+	var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
+	
+	var obj, o, layer, layerId, featureIdx;
+	for (var i = 0, l = objs.length; i < l; i++) {
+		obj = objs[i];
+	
+		if (app.measure.isActive) {
+			app.measure.addPoint(obj.point);
+			return;
+		}
+	
+		// get layerId of clicked object
+		o = obj.object;
+		while (o) {
+			layerId = o.userData.layerId;
+			featureIdx = o.userData.featureIdx;
+			if (layerId !== undefined) break;
+			o = o.parent;
+		}
+	
+		if (layerId === undefined) break;
+	
+		layer = app.scene.mapLayers[layerId];
+		if (!layer.clickable) break;
+	
+		app.selectedLayer = layer;
+		app.queryTargetPosition.copy(obj.point);
+	
+		// query marker
+		app.queryMarker.position.copy(obj.point);
+		app.scene.add(app.queryMarker);
+	
+		if (o.userData.isLabel) {
+			o = o.userData.objs[o.userData.partIdx];    // label -> object
+		}
+	
+		app.highlightFeature(o);
+		app.render();
+		gui.showQueryResult(obj.point, layer, featureIdx, o, conf.coord.visible);
+	
+		return;
+	}
+	if (app.measure.isActive) return;
+	
+	app.cleanView();
+	
+	if (app.controls.autoRotate) {
+		app.setRotateAnimationMode(false);
+	}
+};
+	
   app.saveCanvasImage = function (width, height, fill_background, saveImageFunc) {
     if (fill_background === undefined) fill_background = true;
 
