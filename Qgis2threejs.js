@@ -1760,6 +1760,19 @@ Q3D.gui
   };
 
   gui.showQueryResult = function (point, layer, featureId, obj, show_coords) {
+	  	var retrieved_data = function getdata(){
+		    var tmp=null;
+		    $.ajax({           
+		        type: "GET",
+		        async: false,
+		        dataType: "json",
+		        url: "data/index/grid_area.json",
+		        success: function (data) {
+		          tmp=data;
+		        }
+		      })
+		    return tmp;
+		  }();
 		// layer name
 		var e = E("qr_layername");
 		var x = layer.features[featureId].geom.centroids[0][0];
