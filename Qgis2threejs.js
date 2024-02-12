@@ -1756,66 +1756,81 @@ Q3D.gui
     gui.popup.show("pageinfo");
   };
 
-  gui.showQueryResult = function (point, layer, obj, show_coords) {
-    // layer name
-    var e = E("qr_layername");
-    if (layer && e) e.innerHTML = layer.properties.name;
+  gui.showQueryResult = function (point, layer, featureId, obj, show_coords) {
+		// layer name
+		var e = E("qr_layername");
+		var x = layer.features[featureId].geom.centroids[0][0];
+		var y = layer.features[featureId].geom.centroids[0][1];
+		var x1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).x;
+		var y1 = app.scene.toMapCoordinates({"x": x,"y": y,"z": 250}).y;
+		var da = retrieved_data[featureId];
+		
+		if (layer && e) e.innerHTML = 'House: '+(da["House_PCT"]*100).toFixed(2).toString()
+					      +' % <br> Factory :'+(da["Factory__1"]*100).toFixed(2).toString()                      
+			                      +' % <br> Gov. Building :'+(da["Govern_PCT"]*100).toFixed(2).toString()
+			                      +' % <br> Comm. Building :'+(da["Commerc_PC"]*100).toFixed(2).toString()
+					      +' % <br> Park :'+(da["Park_PCT"]*100).toFixed(2).toString()			                      
+					      +' %';   
+		
+		// clicked coordinates
+		e = E("qr_coords_table");
+		if (e) {
+			if (show_coords) {
+				e.classList.remove("hidden");
 
-    // clicked coordinates
-    e = E("qr_coords_table");
-    if (e) {
-      if (show_coords) {
-        e.classList.remove("hidden");
+				var pt = app.scene.toMapCoordinates(point);
 
-        var pt = app.scene.toMapCoordinates(point);
+				e = E("qr_coords");
 
-        e = E("qr_coords");
+				if (conf.coord.latlon) {
+					var lonLat = proj4(app.scene.userData.proj).inverse([pt.x, pt.y]);
+					e.innerHTML = Q3D.Utils.convertToDMS(lonLat[1], lonLat[0]) + ", Elev. " + pt.z.toFixed(2);
+				}
+				else {
+					proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
+					proj4.defs("EPSG:5171", "+proj=tmerc +lat_0=38 +lon_0=129 +k=1 +x_0=200000 +y_0=500000 +ellps=bessel +units=m +no_defs");
+					//var firstProjection =';
+					var new_xy = proj4("EPSG:5171","EPSG:4326", [pt.x,pt.y]);
+					e.innerHTML = [new_xy[0].toFixed(3), new_xy[1].toFixed(3), pt.z.toFixed(0)].join(", ");
+				}
 
-        if (conf.coord.latlon) {
-          var lonLat = proj4(app.scene.userData.proj).inverse([pt.x, pt.y]);
-          e.innerHTML = Q3D.Utils.convertToDMS(lonLat[1], lonLat[0]) + ", Elev. " + pt.z.toFixed(2);
-        }
-        else {
-          e.innerHTML = [pt.x.toFixed(2), pt.y.toFixed(2), pt.z.toFixed(2)].join(", ");
-        }
+				if (conf.debugMode) {
+					var p = app.scene.userData,
+						be = p.baseExtent;
+					e.innerHTML += "<br>WLD: " + [point.x.toFixed(8), point.y.toFixed(8), point.z.toFixed(8)].join(", ");
+					e.innerHTML += "<br><br>ORG: " + [p.origin.x.toFixed(8), p.origin.y.toFixed(8), p.origin.z.toFixed(8)].join(", ");
+					e.innerHTML += "<br>BE CNTR: " + [be.cx.toFixed(8), be.cy.toFixed(8)].join(", ");
+					e.innerHTML += "<br>BE SIZE: " + [be.width.toFixed(8), be.height.toFixed(8)].join(", ");
+					e.innerHTML += "<br>ROT: " + be.rotation + "<br>Z SC: " + p.zScale;
+				}
+			}
+			else {
+				e.classList.add("hidden");
+			}
+		}
 
-        if (conf.debugMode) {
-          var p = app.scene.userData,
-              be = p.baseExtent;
-          e.innerHTML += "<br>WLD: " + [point.x.toFixed(8), point.y.toFixed(8), point.z.toFixed(8)].join(", ");
-          e.innerHTML += "<br><br>ORG: " + [p.origin.x.toFixed(8), p.origin.y.toFixed(8), p.origin.z.toFixed(8)].join(", ");
-          e.innerHTML += "<br>BE CNTR: " + [be.cx.toFixed(8), be.cy.toFixed(8)].join(", ");
-          e.innerHTML += "<br>BE SIZE: " + [be.width.toFixed(8), be.height.toFixed(8)].join(", ");
-          e.innerHTML += "<br>ROT: " + be.rotation + "<br>Z SC: " + p.zScale;
-        }
-      }
-      else {
-        e.classList.add("hidden");
-      }
-    }
+		e = E("qr_attrs_table");
+		if (e) {
+			for (var i = e.children.length - 1; i >= 0; i--) {
+				if (e.children[i].tagName.toUpperCase() == "TR") e.removeChild(e.children[i]);
+			}
 
-    e = E("qr_attrs_table");
-    if (e) {
-      for (var i = e.children.length - 1; i >= 0; i--) {
-        if (e.children[i].tagName.toUpperCase() == "TR") e.removeChild(e.children[i]);
-      }
-
-      if (layer && layer.properties.propertyNames !== undefined) {
-        var row;
-        for (var i = 0, l = layer.properties.propertyNames.length; i < l; i++) {
-          row = document.createElement("tr");
-          row.innerHTML = "<td>" + layer.properties.propertyNames[i] + "</td>" +
-                          "<td>" + obj.userData.properties[i] + "</td>";
-          e.appendChild(row);
-        }
-        e.classList.remove("hidden");
-      }
-      else {
-        e.classList.add("hidden");
-      }
-    }
-    gui.popup.show("queryresult");
-  };
+			if (layer && layer.properties.propertyNames !== undefined) {
+				var row;
+				for (var i = 0, l = layer.properties.propertyNames.length; i < l; i++) {
+					row = document.createElement("tr");
+					row.innerHTML = "<td>" + layer.properties.propertyNames[i] + "</td>" +
+									"<td>" + obj.userData.properties[i] + "</td>";
+					e.appendChild(row);
+				}
+				e.classList.remove("hidden");
+			}
+			else {
+				e.classList.add("hidden");
+			}
+		}
+		gui.popup.show("queryresult");
+	};
 
   gui.showPrintDialog = function () {
 
